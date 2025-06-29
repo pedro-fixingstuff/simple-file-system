@@ -56,7 +56,7 @@ void delete_directory(BTree* tree, const char* name);
 
 // Navigation
 Directory* get_root_directory();
-void change_directory(Directory** current, const char* path);
+void change_directory(Directory** current_dir, const char* path, Directory* root);
 void list_directory_contents(Directory* dir);
 
 #endif

@@ -2,6 +2,26 @@
 
 /* Funções auxiliares */
 
+TreeNode* btree_search_recursive(BTreeNode* node, const char* name);
+
+void btree_traverse_recursive(BTreeNode* node);
+
+TreeNode* getPred(BTreeNode *node, int idx) {
+    BTreeNode *cur = node->children[idx];
+    while (!cur->leaf) {
+        cur = cur->children[cur->num_keys];
+    }
+    return cur->keys[cur->num_keys - 1];
+}
+
+TreeNode* getSucc(BTreeNode *node, int idx) {
+    BTreeNode *cur = node->children[idx + 1];
+    while (!cur->leaf) {
+        cur = cur->children[0];
+    }
+    return cur->keys[0];
+}
+
 BTreeNode* btree_create_node(int leaf) {
     BTreeNode *newNode = malloc(sizeof(BTreeNode));
     newNode->num_keys = 0;
@@ -87,7 +107,8 @@ void btree_insert_non_full(BTreeNode *node, TreeNode* key) {
 
 int btree_find_key(BTreeNode *node, const char* name) {
     int idx = 0;
-    while (idx < node->num_keys && strcmp(node->keys[idx], name) < 0) {
+    // A correção está em usar 'node->keys[idx]->name' na comparação
+    while (idx < node->num_keys && strcmp(node->keys[idx]->name, name) < 0) {
         ++idx;
     }
     return idx;
@@ -209,7 +230,7 @@ void btree_fill(BTreeNode *node, int idx) {
 }
 
 void btree_remove_from_node(BTreeNode *node, const char* name) {
-    int idx = findKey(node, name);
+    int idx = btree_find_key(node, name); 
 
     // Se a chave está presente neste nó
     if (idx < node->num_keys && strcmp(node->keys[idx]->name, name) == 0) {
@@ -221,15 +242,19 @@ void btree_remove_from_node(BTreeNode *node, const char* name) {
         } else { // Chave está em um nó interno
             // Se o filho predecessor tem no mínimo "ordem" chaves
             if (node->children[idx]->num_keys >= BTREE_ORDER) {
-                int pred = getPred(node, idx);
+                // CORREÇÃO: 'pred' é um TreeNode*, não um int
+                TreeNode* pred = getPred(node, idx); 
                 node->keys[idx] = pred;
-                btree_remove_from_node(node->children[idx], pred);
+                // CORREÇÃO: Passa o nome do predecessor para a remoção recursiva
+                btree_remove_from_node(node->children[idx], pred->name);
             }
             // Se o filho sucessor tem no mínimo "ordem" chaves
             else if (node->children[idx + 1]->num_keys >= BTREE_ORDER) {
-                int succ = getSucc(node, idx);
+                // CORREÇÃO: 'succ' é um TreeNode*, não um int
+                TreeNode* succ = getSucc(node, idx);
                 node->keys[idx] = succ;
-                btree_remove_from_node(node->children[idx + 1], succ);
+                // CORREÇÃO: Passa o nome do sucessor para a remoção recursiva
+                btree_remove_from_node(node->children[idx + 1], succ->name);
             }
             // Se ambos os filhos têm "ordem-1" chaves, faz-se a fusão
             else {
@@ -242,16 +267,12 @@ void btree_remove_from_node(BTreeNode *node, const char* name) {
             return;
         }
 
-        // Indica se a chave está na subárvore do último filho
         int flag = (idx == node->num_keys);
 
-        // Se o filho onde a chave deveria estar tem menos chaves do que a ordem, preenche-o
         if (node->children[idx]->num_keys < BTREE_ORDER) {
             btree_fill(node, idx);
         }
 
-        // Se o último filho foi fundido, ele deve ter sido fundido com o anterior.
-        // Então, recursivamente chama-se o (idx-1)o filho.
         if (flag && idx > node->num_keys) {
             btree_remove_from_node(node->children[idx - 1], name);
         } else {
@@ -260,40 +281,40 @@ void btree_remove_from_node(BTreeNode *node, const char* name) {
     }
 }
 
-
-
 BTree* btree_create() {
     BTree* tree = malloc(sizeof(BTree));
     tree->root = NULL;
     return tree;
 }
 
+
 TreeNode* btree_search(BTree* tree, const char* name) {
-    BTreeNode *node = tree->root;
-
-    while (1) {
-        if (node == NULL) {
-            return NULL;
-        }
-
-        // Procura pela chave dentro do nó atual
-        for (int i = 0; i < node->num_keys; i++) {
-            if (strcmp(node->keys[i]->name, name) == 0) {
-                return node->keys[i];
-            }
-            else if (strcmp(node->keys[i]->name, name) < 0) {
-                // Se o nó é uma folha e a chave não foi encontrada
-                if (node->leaf) {
-                    return NULL;
-                }
-                // Desce para o filho apropriado
-                else {
-                    node = node->children[i];
-                    break;
-                }
-            }
-        }
+    if (!tree || !tree->root) {
+        return NULL;
     }
+    return btree_search_recursive(tree->root, name);
+}
+
+TreeNode* btree_search_recursive(BTreeNode* node, const char* name) {
+    if (node == NULL) {
+        return NULL;
+    }
+
+    int i = 0;
+
+    while (i < node->num_keys && strcmp(name, node->keys[i]->name) > 0) {
+        i++;
+    }
+
+    if (i < node->num_keys && strcmp(name, node->keys[i]->name) == 0) {
+        return node->keys[i]; // Sucesso!
+    }
+
+    if (node->leaf) {
+        return NULL;
+    }
+
+    return btree_search_recursive(node->children[i], name);
 }
 
 void btree_insert(BTree* tree, TreeNode* node) {
@@ -337,5 +358,34 @@ void btree_delete(BTree* tree, const char* name) {
 }
 
 void btree_traverse(BTree* tree) {
-    printf("[Exemplo] arquivo.txt\n");
+    if (tree && tree->root) {
+        btree_traverse_recursive(tree->root);
+    } else {
+        // O diretório está vazio, não imprime nada ou uma mensagem.
+        printf("(vazio)\n"); // Descomente se quiser uma mensagem para diretórios vazios.
+    }
+}
+
+void btree_traverse_recursive(BTreeNode* node) {
+    if (node == NULL) {
+        return;
+    }
+
+    int i;
+    // Percorre as chaves e os filhos em ordem intercalada
+    for (i = 0; i < node->num_keys; i++) {
+        // 1. Visita a sub-árvore filha à esquerda da chave[i]
+        if (!node->leaf) {
+            btree_traverse_recursive(node->children[i]);
+        }
+
+        // 2. Processa (imprime) a chave[i]
+        const char* type_str = (node->keys[i]->type == FILE_TYPE) ? "ARQUIVO" : "DIRETÓRIO";
+        printf("  - %-20s [%s]\n", node->keys[i]->name, type_str);
+    }
+
+    // 3. Visita a última sub-árvore filha (à direita da última chave)
+    if (!node->leaf) {
+        btree_traverse_recursive(node->children[i]);
+    }
 }
