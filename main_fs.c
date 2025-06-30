@@ -57,17 +57,35 @@ int main() {
             if (arg1 == NULL) {
                 printf("Uso: mkdir <nome_do_diretorio>\n");
             } else {
-                TreeNode* new_dir_node = create_directory(arg1);
-                btree_insert(current_dir->tree, new_dir_node);
+                // VERIFICA PRIMEIRO SE O NOME JÁ EXISTE
+                if (btree_search(current_dir->tree, arg1) != NULL) {
+                    printf("Erro: O nome '%s' já existe neste diretório.\n", arg1);
+                } else {
+                    TreeNode* new_dir_node = create_directory(arg1);
+                    btree_insert(current_dir->tree, new_dir_node);
+                }
             }
         }
         else if (strcmp(command, "touch") == 0) {
             if (arg1 == NULL) {
-                printf("Uso: touch <nome_do_arquivo>\n");
+                printf("Uso: touch <nome_do_arquivo> [conteúdo do arquivo...]\n");
             } else {
-                // Cria com conteúdo vazio, conforme solicitado
-                TreeNode* new_file_node = create_txt_file(arg1, "");
-                btree_insert(current_dir->tree, new_file_node);
+                if (btree_search(current_dir->tree, arg1) != NULL) {
+                    printf("Erro: O nome '%s' já existe neste diretório.\n", arg1);
+                } else {
+                    // Pega o resto da string de input como conteúdo
+                    char* content = strtok(NULL, ""); // Pega tudo até o fim da linha
+                    if (content == NULL) {
+                        content = ""; // Garante que não seja nulo se não houver conteúdo
+                    }
+
+                    TreeNode* new_file_node = create_txt_file(arg1, content);
+                    
+                    // Verifica se a criação foi bem sucedida (respeitando o limite de 1MB)
+                    if (new_file_node != NULL) {
+                        btree_insert(current_dir->tree, new_file_node);
+                    }
+                }
             }
         }
         else if (strcmp(command, "rm") == 0) {

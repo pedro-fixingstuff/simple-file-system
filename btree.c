@@ -320,18 +320,32 @@ TreeNode* btree_search_recursive(BTreeNode* node, const char* name) {
 void btree_insert(BTree* tree, TreeNode* node) {
     BTreeNode *root = tree->root;
 
-    // Se a raiz está cheia
-    if (root->num_keys == 2 * BTREE_ORDER - 1) {
-        BTreeNode *newRoot = btree_create_node(0);
+    // CASO ESPECIAL: A árvore está vazia. Esta é a correção.
+    if (root == NULL) {
+        // Cria um novo nó raiz, que também é uma folha.
+        tree->root = btree_create_node(1); // 1 significa que é uma folha
+        // Insere a primeira chave.
+        tree->root->keys[0] = node;
+        tree->root->num_keys = 1;
+        return; // Inserção concluída.
+    }
+
+    // Se a raiz está cheia, a árvore cresce em altura.
+    if (root->num_keys == 2 * BTREE_ORDER - 1) { // Esta linha agora é segura
+        BTreeNode *newRoot = btree_create_node(0); // Nova raiz não é folha
         tree->root = newRoot;
         newRoot->children[0] = root;
 
-        // Divide a raiz antiga e move a chave do meio para a nova raiz
         btree_split_child(newRoot, 0, root);
 
-        // Insere a chave na árvore modificada
-        btree_insert_non_full(newRoot, node);
-    } else { // Raiz não cheia
+        // Decide para qual dos dois filhos a nova chave deve ir
+        int i = 0;
+        if (strcmp(node->name, newRoot->keys[0]->name) > 0) {
+            i++;
+        }
+        btree_insert_non_full(newRoot->children[i], node);
+
+    } else { // Se a raiz não está cheia, chama a inserção normal.
         btree_insert_non_full(root, node);
     }
 }
@@ -362,7 +376,7 @@ void btree_traverse(BTree* tree) {
         btree_traverse_recursive(tree->root);
     } else {
         // O diretório está vazio, não imprime nada ou uma mensagem.
-        printf("(vazio)\n"); // Descomente se quiser uma mensagem para diretórios vazios.
+        printf("(vazio)\n");
     }
 }
 
