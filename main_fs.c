@@ -19,7 +19,6 @@ void print_help() {
 }
 
 int main() {
-    // Inicialização do sistema de arquivos
     Directory* root = get_root_directory();
     Directory* current_dir = root;
 
@@ -31,21 +30,17 @@ int main() {
 
     while (1) {
         printf("FS > ");
-        // Lê a linha de comando inteira
         if (fgets(input, sizeof(input), stdin) == NULL) {
-            break; // Encerra em caso de erro ou EOF
+            break;
         }
 
-        // Remove a quebra de linha do final do input
         input[strcspn(input, "\n")] = 0;
 
-        // Pega o primeiro token (o comando)
         command = strtok(input, " ");
         if (command == NULL) {
-            continue; // Linha vazia, pede novo comando
+            continue;
         }
 
-        // Pega o segundo token (o argumento)
         arg1 = strtok(NULL, " ");
 
         // --- Processamento dos Comandos ---
@@ -57,7 +52,6 @@ int main() {
             if (arg1 == NULL) {
                 printf("Uso: mkdir <nome_do_diretorio>\n");
             } else {
-                // VERIFICA PRIMEIRO SE O NOME JÁ EXISTE
                 if (btree_search(current_dir->tree, arg1) != NULL) {
                     printf("Erro: O nome '%s' já existe neste diretório.\n", arg1);
                 } else {
@@ -73,15 +67,13 @@ int main() {
                 if (btree_search(current_dir->tree, arg1) != NULL) {
                     printf("Erro: O nome '%s' já existe neste diretório.\n", arg1);
                 } else {
-                    // Pega o resto da string de input como conteúdo
-                    char* content = strtok(NULL, ""); // Pega tudo até o fim da linha
+                    char* content = strtok(NULL, "");
                     if (content == NULL) {
-                        content = ""; // Garante que não seja nulo se não houver conteúdo
+                        content = "";
                     }
 
                     TreeNode* new_file_node = create_txt_file(arg1, content);
                     
-                    // Verifica se a criação foi bem sucedida (respeitando o limite de 1MB)
                     if (new_file_node != NULL) {
                         btree_insert(current_dir->tree, new_file_node);
                     }
@@ -127,43 +119,31 @@ int main() {
         }
         else if (strcmp(command, "exit") == 0) {
             printf("Encerrando o sistema de arquivos.\n");
-            break; // Sai do loop while(1)
+            break;
         }
         else {
             printf("Comando desconhecido: '%s'. Digite 'help' para ver a lista de comandos.\n", command);
         }
     }
-
-    // TODO: Idealmente, aqui deveria haver uma função para liberar toda a memória
-    // alocada pelo sistema de arquivos antes de encerrar.
-    // free_filesystem(root);
-
     return 0;
 }
 
-/**
- * Função recursiva para salvar a estrutura do FS em um arquivo de imagem.
- */
 void save_fs_recursive(FILE* img_file, BTreeNode* node, int depth) {
     if (node == NULL) return;
 
     int i;
     for (i = 0; i < node->num_keys; i++) {
-        // Visita o filho esquerdo
         if (!node->leaf) {
             save_fs_recursive(img_file, node->children[i], depth + 1);
         }
 
-        // Imprime a indentação para visualização hierárquica
         for (int j = 0; j < depth; j++) {
             fprintf(img_file, "│   ");
         }
         
-        // Imprime o nó atual
         TreeNode* current_tnode = node->keys[i];
         fprintf(img_file, "└── %s\n", current_tnode->name);
 
-        // Se for um diretório, chama a recursão para seus filhos
         if (current_tnode->type == DIRECTORY_TYPE) {
             Directory* dir = current_tnode->data.directory;
             if (dir->tree && dir->tree->root) {
@@ -172,7 +152,6 @@ void save_fs_recursive(FILE* img_file, BTreeNode* node, int depth) {
         }
     }
 
-    // Visita o último filho
     if (!node->leaf) {
         save_fs_recursive(img_file, node->children[i], depth + 1);
     }
