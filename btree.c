@@ -6,7 +6,7 @@ TreeNode* btree_search_recursive(BTreeNode* node, const char* name);
 
 void btree_traverse_recursive(BTreeNode* node);
 
-TreeNode* getPred(BTreeNode *node, int idx) {
+TreeNode* btree_get_pred(BTreeNode *node, int idx) {
     BTreeNode *cur = node->children[idx];
     while (!cur->leaf) {
         cur = cur->children[cur->num_keys];
@@ -14,7 +14,7 @@ TreeNode* getPred(BTreeNode *node, int idx) {
     return cur->keys[cur->num_keys - 1];
 }
 
-TreeNode* getSucc(BTreeNode *node, int idx) {
+TreeNode* btree_get_succ(BTreeNode *node, int idx) {
     BTreeNode *cur = node->children[idx + 1];
     while (!cur->leaf) {
         cur = cur->children[0];
@@ -205,12 +205,12 @@ void btree_remove_from_node(BTreeNode *node, const char* name) {
             node->num_keys--;
         } else {
             if (node->children[idx]->num_keys >= BTREE_ORDER) {
-                TreeNode* pred = getPred(node, idx); 
+                TreeNode* pred = btree_get_pred(node, idx); 
                 node->keys[idx] = pred;
                 btree_remove_from_node(node->children[idx], pred->name);
             }
             else if (node->children[idx + 1]->num_keys >= BTREE_ORDER) {
-                TreeNode* succ = getSucc(node, idx);
+                TreeNode* succ = btree_get_succ(node, idx);
                 node->keys[idx] = succ;
                 btree_remove_from_node(node->children[idx + 1], succ->name);
             }

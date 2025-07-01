@@ -9,7 +9,7 @@ void print_help() {
     printf("\n--- Simple File System --- Comandos disponíveis ---\n");
     printf("  ls              - Lista o conteúdo do diretório atual.\n");
     printf("  mkdir <nome>    - Cria um novo diretório.\n");
-    printf("  touch <nome>    - Cria um novo arquivo vazio.\n");
+    printf("  touch <nome>    - Cria um novo arquivo.\n");
     printf("  rm <nome>       - Remove um arquivo.\n");
     printf("  rmdir <nome>    - Remove um diretório (deve estar vazio).\n");
     printf("  cd <path>       - Muda de diretório. Use '/' para ir para a raiz.\n");
